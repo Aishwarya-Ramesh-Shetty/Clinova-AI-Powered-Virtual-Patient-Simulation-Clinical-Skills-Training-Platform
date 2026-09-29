@@ -152,6 +152,22 @@ const ProtectedRoute = () => {
 export default ProtectedRoute
 ```
 
+### `src/components/common/DoctorProtectedRoute.jsx`
+```jsx
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import Loader from './Loader'
+
+const DoctorProtectedRoute = () => {
+  const { isDoctorAuthenticated, loading } = useAuth()
+
+  if (loading) return <Loader />
+  return isDoctorAuthenticated ? <Outlet /> : <Navigate to="/doctor/login" replace />
+}
+
+export default DoctorProtectedRoute
+```
+
 ### `src/services/api.js`
 ```javascript
 import axios from 'axios';
@@ -200,6 +216,8 @@ export const uploadPrescription = (formData) => api.post('/prescriptions/upload'
 }); // formData must have key 'prescription'
 export const getPrescriptions = () => api.get('/prescriptions');
 export const getPrescriptionById = (id) => api.get(`/prescriptions/${id}`);
+
+export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
 
 export default api;
 ```
@@ -661,12 +679,15 @@ export default function DiagnosisResultPage() {
     <div className="max-w-4xl mx-auto p-4 mt-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">AI Clinical Assessment</h1>
-        <button 
-          onClick={handleSpeak}
-          className="flex items-center gap-2 bg-teal-100 text-teal-800 px-4 py-2 rounded font-bold hover:bg-teal-200"
-        >
-          {isSpeaking ? <><FaVolumeMute /> Stop Audio</> : <><FaVolumeUp /> Read Aloud</>}
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={handleSpeak}
+            className="flex items-center gap-2 bg-teal-100 text-teal-800 px-4 py-2 rounded font-bold hover:bg-teal-200"
+          >
+            {isSpeaking ? <><FaVolumeMute /> Stop Audio</> : <><FaVolumeUp /> Read Aloud</>}
+          </button>
+          <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded no-print">Print</button>
+        </div>
       </div>
       
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -698,6 +719,17 @@ export default function DiagnosisResultPage() {
             <p className="mt-2"><strong>Case Study Ref:</strong> {caseStudyReference}</p>
           </div>
         </details>
+
+        <button onClick={() => {
+            fetch('/api/summary/generate', {
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('clinova_token') },
+              body: JSON.stringify({ symptoms, assessment, recommendedSpecialist })
+            }).then(res => res.json()).then(data => alert('Summary Generated: ' + data.data.summary.summaryText));
+          }} 
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          Generate Summary
+        </button>
       </div>
 
       <div className="bg-amber-100 text-amber-800 p-4 rounded-md mb-6 font-semibold text-center">
@@ -976,16 +1008,16 @@ export default function ConsultationSummaryPage() {
 ```
 
 ### `src/pages/PrescriptionUploadPage.jsx`
+Displays inline extraction results without redirecting.
 ```jsx
 import { useState } from 'react';
 import { uploadPrescription } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function PrescriptionUploadPage() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [extractedData, setExtractedData] = useState(null);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -996,9 +1028,9 @@ export default function PrescriptionUploadPage() {
 
     setLoading(true);
     try {
-      await uploadPrescription(formData);
-      toast.success('Uploaded successfully');
-      navigate('/prescriptions');
+      const res = await uploadPrescription(formData);
+      setExtractedData(res.data.prescription.extractedData);
+      toast.success('Extracted successfully');
     } catch(err) {
       toast.error('Upload failed');
     } finally {
@@ -1025,6 +1057,22 @@ export default function PrescriptionUploadPage() {
           {loading ? 'Extracting via AI...' : 'Upload & Extract'}
         </button>
       </form>
+      
+      {extractedData && (
+        <div className="mt-6 p-4 border rounded bg-gray-50">
+          <h3 className="font-bold text-lg mb-2">Extraction Results</h3>
+          <p><strong>Doctor:</strong> {extractedData.doctorName}</p>
+          <p><strong>Date:</strong> {extractedData.date}</p>
+          <div className="mt-4">
+            <h4 className="font-semibold text-sm mb-1">Medicines:</h4>
+            <ul className="text-sm list-disc pl-4 space-y-1">
+              {extractedData.medicines?.map((m, i) => (
+                <li key={i}>{m.name} - {m.dosage} ({m.frequency}) - {m.duration}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1158,6 +1206,120 @@ export default function Loader() {
 }
 ```
 
+### `src/pages/NotFoundPage.jsx`
+```jsx
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function NotFoundPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => navigate('/'), 3000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+      <h1 className="text-4xl font-bold text-teal-600 mb-4">404 - Not Found</h1>
+      <p className="text-gray-600">Redirecting to home in 3 seconds...</p>
+    </div>
+  );
+}
+```
+
+### `src/pages/DoctorLoginPage.jsx`
+```jsx
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
+export default function DoctorLoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { loginDoctor } = useAuth(); // Assuming loginDoctor handles doctor auth
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await loginDoctor(email, password);
+      toast.success('Logged in successfully');
+      navigate('/doctor/dashboard');
+    } catch (err) {
+      toast.error('Login failed');
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-teal-700">Doctor Portal Login</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-gray-700">Email</label>
+          <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="w-full border rounded px-3 py-2" />
+        </div>
+        <div>
+          <label className="block text-gray-700">Password</label>
+          <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required className="w-full border rounded px-3 py-2" />
+        </div>
+        <button type="submit" className="w-full bg-teal-600 text-white py-2 rounded hover:bg-teal-700">Login</button>
+      </form>
+    </div>
+  );
+}
+```
+
+### `src/pages/DoctorDashboardPage.jsx`
+```jsx
+import { useEffect, useState } from 'react';
+// import { getDoctorAppointments } from '../services/api';
+
+export default function DoctorDashboardPage() {
+  const [appointments, setAppointments] = useState([]);
+
+  useEffect(() => {
+    // Fetch doctor appointments using real API later
+    // getDoctorAppointments().then(res => setAppointments(res.data.appointments));
+  }, []);
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 mt-8">
+      <h2 className="text-2xl font-bold mb-6">Doctor Dashboard</h2>
+      <div className="bg-white p-4 rounded shadow">
+        <p>Welcome to the Doctor Portal. Your appointments will appear here.</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### `src/pages/PatientHistoryPage.jsx`
+```jsx
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+// import { getPatientHistory } from '../services/api';
+
+export default function PatientHistoryPage() {
+  const { patientId } = useParams();
+  const [history, setHistory] = useState(null);
+
+  useEffect(() => {
+    // getPatientHistory(patientId).then(res => setHistory(res.data));
+  }, [patientId]);
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 mt-8">
+      <h2 className="text-2xl font-bold mb-6">Patient Medical History</h2>
+      <div className="bg-white p-4 rounded shadow">
+        <p>Loading patient history for ID: {patientId}...</p>
+      </div>
+    </div>
+  );
+}
+```
+
 ---
 
 ## 3. Color Palette & Design System (Tailwind Classes)
@@ -1222,3 +1384,26 @@ export const mockDoctorsResponse = {
 1. **Testing with Mock Data:** Replace API exports in `api.js` with mock promises. Verify that the UI renders lists and handles state changes without errors.
 2. **Testing Voice Input:** Use Google Chrome (safari/firefox support varies). Click the voice button, accept microphone permissions, speak, and verify the text appears in the textarea.
 3. **Testing with Real Backend:** Ensure `backend` and `ai-service` are running locally. Ensure `VITE_API_URL` points to `http://localhost:5000/api`. Verify the full flow: Register -> Login -> Symptoms -> Diagnosis -> Book -> Summary.
+
+---
+
+## 7. Dual Authentication Strategy
+
+The platform maintains separate sessions for Patients and Doctors:
+- **Patient Auth:** Uses `clinova_token` in `localStorage`.
+- **Doctor Auth:** Uses `clinova_doctor_token` in `localStorage`.
+- **AuthContext:** Manages both sessions independently, providing `isAuthenticated` for patients and `isDoctorAuthenticated` for doctors. This allows proper role-based routing (e.g., `ProtectedRoute` vs `DoctorProtectedRoute`) and distinct Navbar rendering depending on the current user type.
+
+---
+
+## 8. Switching from Mock to Real API
+
+When the backend implementation (`aishwarya/backend`) is ready, the frontend must be reconfigured to communicate with real endpoints:
+- Open `frontend/src/services/api.js`.
+- Ensure all endpoints are exported correctly, including the `doctorLoginApi`:
+  ```javascript
+  export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
+  ```
+- For each export currently using mock data, comment out the `Promise.resolve(mockX)` lines.
+- Uncomment the actual `api.post(...)` or `api.get(...)` lines.
+- Ensure that the actual responses from the backend exactly match the expected data shape. For example, `uploadPrescription` expects to receive the exact structure `res.data.prescription.extractedData` in order to render inline OCR results correctly.

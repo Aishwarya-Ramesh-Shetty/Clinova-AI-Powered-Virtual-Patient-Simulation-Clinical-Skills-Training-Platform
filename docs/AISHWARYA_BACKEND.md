@@ -690,10 +690,15 @@ Use **Postman** or **cURL**:
 4. In Postman, set Header `Authorization: Bearer <token>` to test `GET /api/doctors/search` and `GET /api/auth/me`.
 5. For file uploads on `POST /api/prescriptions/upload`, use Form-Data in Postman and set key `prescription` to File type.
 
-## 5. Important Notes
+## 5. Important Notes & Frontend Integration
 
 - **CORS:** Ensure `origin` matches `FRONTEND_URL` in `.env`.
 - **Naming Conventions:** `snakeToCamel` is heavily utilized to convert AI snake_case to frontend-ready camelCase.
 - **Upload Names:** Frontend sends `prescription`, Multer intercepts `prescription`, then Axios forwards to AI as `file`.
 - **Specialty Strings:** Must precisely match the canonical list in API docs.
 - **Envelope:** Every response uses the `sendResponse` wrapper, forcing `{success, data, message}`.
+- **`POST /api/symptoms/analyze`:** Must forward the `language` field from the request body to the AI service's `/analyze-symptoms` endpoint (the frontend sends it, AI service expects it).
+- **`POST /api/doctor-auth/login`:** Must return exactly `{ success: true, data: { token: 'jwt', doctor: { id, name, email, specialty } }, message }` — frontend's AuthContext stores `res.data.token` as `clinova_doctor_token` and `res.data.doctor` as doctor state.
+- **Doctor Portal Middleware:** Doctor portal routes must use a separate middleware that reads `Authorization: Bearer <doctor_token>` and validates it with the same JWT_SECRET but extracts `doctorId` from payload.
+- **Static File Serving:** `app.use('/uploads', express.static('uploads'))` must be in app.js so prescription images served from `/uploads/filename.jpg` are accessible by the frontend's `<img>` tags.
+- **Real API Switching:** When switching frontend from mock to real: `uploadPrescription` in `api.js` returns `res.data.prescription.extractedData` — backend must return this exact shape.

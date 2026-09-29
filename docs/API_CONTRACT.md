@@ -72,9 +72,13 @@ HTTP status codes: `200` OK, `201` Created, `400` Bad Request, `401` Unauthorize
 
 - **Method:** JWT Bearer Token
 - **Header:** `Authorization: Bearer <token>`
-- **Token payload:** `{ userId: "mongo_id", email: "user@email.com" }`
+- **Token payload:** `{ userId: "mongo_id", email: "user@email.com" }` for patients, or `{ doctorId: "mongo_id", email: "doctor@email.com" }` for doctors.
 - **Signed with:** `JWT_SECRET` env variable
 - **Expiry:** 7 days
+
+**Frontend localStorage keys:**
+- `clinova_token`: Patient JWT
+- `clinova_doctor_token`: Doctor JWT
 
 ---
 
@@ -224,12 +228,14 @@ Response: { success: true, data: { token: "jwt...", doctor: { id, name, email, s
 #### `GET /api/doctor-portal/appointments`  🔒
 ```
 Headers:  Authorization: Bearer <doctor_token>
+Note: Must use a doctor-specific JWT middleware (payload contains doctorId, same JWT_SECRET).
 Response: { success: true, data: { appointments: [ ...list of upcoming appointments for this doctor... ] } }
 ```
 
 #### `GET /api/doctor-portal/patients/:patientId/history`  🔒
 ```
 Headers:  Authorization: Bearer <doctor_token>
+Note: Must use a doctor-specific JWT middleware (payload contains doctorId, same JWT_SECRET).
 Response: { 
   success: true, 
   data: { 
@@ -248,7 +254,7 @@ Response: {
 Headers:  Authorization: Bearer <token>
 Request:  {
   symptoms: "I have been having knee pain for 2 weeks, it swells up after walking",
-  language: "en-IN"  // optional, e.g. "hi-IN", "kn-IN" to get AI output in Indian languages
+  language: "en-US"  // optional, default 'en-US', e.g. "hi-IN", "kn-IN". Backend must forward this to AI service.
 }
 
 → Backend internally calls AI Service: POST http://localhost:8000/analyze-symptoms
@@ -594,3 +600,12 @@ CORSMiddleware(
     allow_headers=["*"],
 )
 ```
+
+---
+
+## 🔄 Switching from Mock to Real API
+
+When Aishwarya's backend is fully ready, the frontend needs to be updated to stop using mock data and start calling the real APIs.
+
+In `frontend/src/services/api.js`, any `Promise.resolve(mockX)` calls should be replaced with real `api.post()` / `api.get()` calls for the respective endpoints.
+Comment out the mock lines and uncomment the real `api` calls. Ensure that the responses returned from the backend exactly match the shapes defined in this document, especially for file uploads like `uploadPrescription` which returns `res.data.prescription.extractedData`.

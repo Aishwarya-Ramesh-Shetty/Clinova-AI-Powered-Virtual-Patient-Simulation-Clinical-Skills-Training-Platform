@@ -32,6 +32,16 @@ Hospital/Doctor Portal (Doctors view patient's digitized history)
 
 ---
 
+## ✨ Key Features
+- **Voice & Multilingual Support:** Describe symptoms using Voice or Text in English, Hindi (hi-IN), or Kannada (kn-IN).
+- **AI Clinical Assessment:** Generates a likely clinical assessment with TTS (Read Aloud) audio output and inline summaries.
+- **Smart Routing:** Recommends specialists and helps discover nearby doctors using an interactive map.
+- **Consultation & Prescriptions:** Book appointments, generate AI summaries, and digitize prescriptions with OCR extraction shown inline.
+- **Dual Portals:** Dedicated Patient and Doctor Portals with separate JWT-based authentication.
+- **Robust Navigation:** Comprehensive routing with smart Navbars, protected routes, and graceful 404 handling.
+
+---
+
 ## 🏗️ Architecture
 
 ```
