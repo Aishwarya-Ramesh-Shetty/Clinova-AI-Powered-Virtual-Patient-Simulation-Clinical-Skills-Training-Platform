@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import * as api from '../services/api';
+import { doctorLoginApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -7,6 +8,10 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('clinova_token'));
+  
+  const [doctor, setDoctor] = useState(null);
+  const [doctorToken, setDoctorToken] = useState(localStorage.getItem('clinova_doctor_token'));
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +51,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const doctorLogin = async (email, password) => {
+    const res = await doctorLoginApi({ email, password });
+    localStorage.setItem('clinova_doctor_token', res.data.token);
+    setDoctorToken(res.data.token);
+    setDoctor(res.data.doctor);
+  };
+
+  const doctorLogout = () => {
+    localStorage.removeItem('clinova_doctor_token');
+    setDoctorToken(null);
+    setDoctor(null);
+  };
+
   const value = {
     user,
     token,
@@ -54,9 +72,15 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
+    doctor,
+    doctorToken,
+    doctorLogin,
+    doctorLogout,
+    isDoctorAuthenticated: !!doctorToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
+

@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import Navbar from './components/common/Navbar'
 import Footer from './components/common/Footer'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import DoctorProtectedRoute from './components/common/DoctorProtectedRoute'
 
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -19,6 +20,7 @@ import ProfilePage from './pages/ProfilePage'
 import DoctorLoginPage from './pages/DoctorLoginPage'
 import DoctorDashboardPage from './pages/DoctorDashboardPage'
 import PatientHistoryPage from './pages/PatientHistoryPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
   return (
@@ -43,9 +45,12 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
-          {/* Doctor Portal Routes (Create a separate ProtectedRoute for doctors) */}
-          <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
-          <Route path="/doctor/patients/:patientId/history" element={<PatientHistoryPage />} />
+          <Route element={<DoctorProtectedRoute />}>
+            <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+            <Route path="/doctor/patients/:patientId/history" element={<PatientHistoryPage />} />
+          </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />

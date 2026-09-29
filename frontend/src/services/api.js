@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { mockSymptomsResponse, mockDoctorsResponse } from '../utils/mockData';
+import { mockSymptomsResponse, mockDoctorsResponse, mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
 
 // ─────────────────────────────────────────────────────────
 // Axios instance — baseURL from .env (VITE_API_URL)
@@ -39,14 +39,18 @@ export const searchDoctors = (params) => Promise.resolve(mockDoctorsResponse);
 export const getDoctorById = (id) => Promise.resolve({ data: { doctor: mockDoctorsResponse.data.doctors[0] } });
 
 export const bookAppointment = (data) => Promise.resolve({ data: { appointment: { status: 'booked' } } }); // body: { doctorId, date, timeSlot, notes }
-export const getAppointments = () => Promise.resolve({ data: { appointments: [] } });
+export const getAppointments = () => Promise.resolve(mockAppointmentsResponse);
 export const cancelAppointment = (id) => Promise.resolve({ data: {} });
 
-export const generateSummary = (data) => Promise.resolve({ data: { summary: {} } });
-export const getSummary = (appointmentId) => Promise.resolve({ data: { summary: {} } });
+export const generateSummary = (data) => Promise.resolve(mockSummaryResponse);
+export const getSummary = (appointmentId) => Promise.resolve(mockSummaryResponse);
 
-export const uploadPrescription = (formData) => Promise.resolve({ data: { prescription: {} } }); // formData must have key 'prescription'
-export const getPrescriptions = () => Promise.resolve({ data: { prescriptions: [] } });
-export const getPrescriptionById = (id) => Promise.resolve({ data: { prescription: {} } });
+export const uploadPrescription = (formData) => Promise.resolve(mockPrescriptionResponse); // formData must have key 'prescription'
+export const getPrescriptions = () => Promise.resolve(mockPrescriptionsListResponse);
+export const getPrescriptionById = (id) => Promise.resolve({ success: true, data: { prescription: mockPrescriptionsListResponse.data.prescriptions[0] } });
+
+
+// Doctor portal auth � real API call
+export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
 
 export default api;

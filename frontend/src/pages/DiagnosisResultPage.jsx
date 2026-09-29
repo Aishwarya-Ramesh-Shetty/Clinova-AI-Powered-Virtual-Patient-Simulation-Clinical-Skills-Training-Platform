@@ -1,11 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { useState } from 'react';
+import { generateSummary } from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function DiagnosisResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSpeaking, speak, stop } = useSpeechSynthesis();
+  const [summary, setSummary] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const result = location.state?.result;
   const lang = location.state?.lang || 'en-US';
 
@@ -20,6 +25,24 @@ export default function DiagnosisResultPage() {
       stop();
     } else {
       speak(assessment, lang);
+    }
+  };
+
+  const handleGenerateSummary = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await generateSummary({
+        symptoms,
+        assessment,
+        recommendedSpecialist,
+        additionalNotes: ''
+      });
+      setSummary(res.data.summary);
+      toast.success('Summary generated successfully');
+    } catch (error) {
+      toast.error('Failed to generate summary');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -65,6 +88,47 @@ export default function DiagnosisResultPage() {
           </div>
         </details>
       </div>
+
+      <div className="mb-6">
+        <button
+          onClick={handleGenerateSummary}
+          disabled={isGenerating}
+          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {isGenerating ? <span className="animate-pulse">Generating Summary...</span> : 'Generate Consultation Summary'}
+        </button>
+      </div>
+
+      {summary && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-teal-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Consultation Summary</h2>
+            <button 
+              onClick={() => window.print()}
+              className="bg-gray-200 text-gray-800 px-4 py-2 rounded font-semibold hover:bg-gray-300"
+            >
+              Print
+            </button>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-700">Chief Complaint:</h3>
+            <p className="text-gray-800 mt-1">{summary.chiefComplaint}</p>
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-700">Assessment:</h3>
+            <p className="text-gray-800 mt-1">{summary.assessment}</p>
+          </div>
+          
+          <div>
+            <h3 className="font-semibold text-gray-700">Full Summary:</h3>
+            <pre className="whitespace-pre-wrap font-sans text-gray-800 mt-2 bg-gray-50 p-4 rounded border">
+              {summary.summaryText}
+            </pre>
+          </div>
+        </div>
+      )}
 
       <div className="bg-amber-100 text-amber-800 p-4 rounded-md mb-6 font-semibold text-center">
         This is AI-assisted analysis. Please consult a qualified doctor.
