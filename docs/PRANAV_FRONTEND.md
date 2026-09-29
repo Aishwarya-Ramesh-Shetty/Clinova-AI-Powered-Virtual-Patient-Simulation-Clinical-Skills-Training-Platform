@@ -95,6 +95,9 @@ import ConsultationSummaryPage from './pages/ConsultationSummaryPage'
 import PrescriptionUploadPage from './pages/PrescriptionUploadPage'
 import PrescriptionVaultPage from './pages/PrescriptionVaultPage'
 import ProfilePage from './pages/ProfilePage'
+import DoctorLoginPage from './pages/DoctorLoginPage'
+import DoctorDashboardPage from './pages/DoctorDashboardPage'
+import PatientHistoryPage from './pages/PatientHistoryPage'
 
 function App() {
   return (
@@ -105,6 +108,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/doctor/login" element={<DoctorLoginPage />} />
           
           <Route element={<ProtectedRoute />}>
             <Route path="/symptoms" element={<SymptomInputPage />} />
@@ -117,6 +121,10 @@ function App() {
             <Route path="/prescriptions" element={<PrescriptionVaultPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
+
+          {/* Doctor Portal Routes (Create a separate ProtectedRoute for doctors) */}
+          <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+          <Route path="/doctor/patients/:patientId/history" element={<PatientHistoryPage />} />
         </Routes>
       </main>
       <Footer />
@@ -361,6 +369,42 @@ export const useGeolocation = () => {
 };
 ```
 
+### `src/hooks/useSpeechSynthesis.js`
+```javascript
+import { useState, useEffect } from 'react';
+
+export const useSpeechSynthesis = () => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const synth = window.speechSynthesis;
+
+  const speak = (text, lang = 'en-US') => {
+    if (synth.speaking) synth.cancel();
+    if (!text) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    synth.speak(utterance);
+  };
+
+  const stop = () => {
+    synth.cancel();
+    setIsSpeaking(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      synth.cancel();
+    };
+  }, []);
+
+  return { isSpeaking, speak, stop };
+};
+```
+
 ### `src/pages/HomePage.jsx`
 ```jsx
 import { Link } from 'react-router-dom';
@@ -532,8 +576,8 @@ export default function SymptomInputPage() {
     if (!text.trim()) return toast.error('Please enter symptoms');
     setLoading(true);
     try {
-      const res = await analyzeSymptoms({ symptoms: text });
-      navigate('/diagnosis', { state: { result: res.data } });
+      const res = await analyzeSymptoms({ symptoms: text, language: lang });
+      navigate('/diagnosis', { state: { result: res.data, lang } });
     } catch (err) {
       toast.error('Analysis failed');
     } finally {
@@ -589,11 +633,15 @@ export default function SymptomInputPage() {
 ### `src/pages/DiagnosisResultPage.jsx`
 ```jsx
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
+import { FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 
 export default function DiagnosisResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isSpeaking, speak, stop } = useSpeechSynthesis();
   const result = location.state?.result;
+  const lang = location.state?.lang || 'en-US';
 
   if (!result) {
     return <div className="text-center mt-10">No results found. <button onClick={() => navigate('/symptoms')} className="text-teal-600 underline">Go back</button></div>;
@@ -601,9 +649,25 @@ export default function DiagnosisResultPage() {
 
   const { symptoms, assessment, recommendedSpecialist, confidence, reasoning, caseStudyReference } = result;
 
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      stop();
+    } else {
+      speak(assessment, lang);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 mt-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">AI Clinical Assessment</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">AI Clinical Assessment</h1>
+        <button 
+          onClick={handleSpeak}
+          className="flex items-center gap-2 bg-teal-100 text-teal-800 px-4 py-2 rounded font-bold hover:bg-teal-200"
+        >
+          {isSpeaking ? <><FaVolumeMute /> Stop Audio</> : <><FaVolumeUp /> Read Aloud</>}
+        </button>
+      </div>
       
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="mb-4">

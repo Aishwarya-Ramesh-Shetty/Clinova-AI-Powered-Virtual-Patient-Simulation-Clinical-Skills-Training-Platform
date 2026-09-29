@@ -100,6 +100,8 @@ HTTP status codes: `200` OK, `201` Created, `400` Bad Request, `401` Unauthorize
 {
   _id: ObjectId,
   name: String,              // "Dr. Ramesh Kumar"
+  email: String,             // unique, lowercase (For Doctor Portal login)
+  password: String,          // bcrypt hashed
   specialty: String,         // "Orthopedic" (MUST match specialist names from AI)
   experience: Number,        // years, e.g. 12
   consultationFee: Number,   // in INR, e.g. 500
@@ -211,28 +213,58 @@ Response: { success: true, data: { user: { id, name, email, phone, dateOfBirth, 
 
 ---
 
+### Doctor Portal (Hospital Side)
+
+#### `POST /api/doctor-auth/login`
+```
+Request:  { email, password }
+Response: { success: true, data: { token: "jwt...", doctor: { id, name, email, specialty } }, message: "Doctor Login successful" }
+```
+
+#### `GET /api/doctor-portal/appointments`  🔒
+```
+Headers:  Authorization: Bearer <doctor_token>
+Response: { success: true, data: { appointments: [ ...list of upcoming appointments for this doctor... ] } }
+```
+
+#### `GET /api/doctor-portal/patients/:patientId/history`  🔒
+```
+Headers:  Authorization: Bearer <doctor_token>
+Response: { 
+  success: true, 
+  data: { 
+    prescriptions: [ ...past prescriptions... ], 
+    consultationSummaries: [ ...past summaries... ] 
+  } 
+}
+```
+
+---
+
 ### Symptom Analysis
 
 #### `POST /api/symptoms/analyze`  🔒
 ```
 Headers:  Authorization: Bearer <token>
 Request:  {
-  symptoms: "I have been having knee pain for 2 weeks, it swells up after walking"
+  symptoms: "I have been having knee pain for 2 weeks, it swells up after walking",
+  language: "en-IN"  // optional, e.g. "hi-IN", "kn-IN" to get AI output in Indian languages
 }
 
 → Backend internally calls AI Service: POST http://localhost:8000/analyze-symptoms
   with body: {
     symptoms: "I have been having knee pain for 2 weeks...",
+    language: "en-IN",
     patient_info: { age: 28, gender: "male" }     ← derived from user's DOB & gender
   }
 
 → AI Service returns (snake_case):
   {
     symptoms: [ { name: "knee pain", duration: "2 weeks", severity: "moderate" } ],
-    assessment: "Based on clinical case study analysis, the symptom pattern...",
-    recommended_specialist: "Orthopedic",
+    assessment: "Based on clinical case study analysis, the symptom pattern...", // translated if language != en
+    recommended_specialist: "Orthopedic", // Specialist name always remains in English
     confidence: 0.82,
-    reasoning: "Persistent knee pain with swelling...",
+    reasoning: "Persistent knee pain with swelling...", // translated
     case_study_reference: "Osteoarthritis Case Study #3"
   }
 
@@ -454,7 +486,7 @@ Response: { success: true, data: { prescription: { ...full prescription } } }
 
 ### `POST http://localhost:8000/analyze-symptoms`
 ```
-Request:  { "symptoms": "string", "patient_info": { "age": 28, "gender": "male" } }
+Request:  { "symptoms": "string", "language": "string", "patient_info": { "age": 28, "gender": "male" } }
 Response: {
   "symptoms": [{ "name": "string", "duration": "string", "severity": "string" }],
   "assessment": "string",

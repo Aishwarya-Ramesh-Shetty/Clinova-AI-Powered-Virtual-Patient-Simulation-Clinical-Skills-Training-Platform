@@ -9,11 +9,11 @@ An integrated web-based healthcare platform that helps patients navigate the ini
 ## 🧭 Patient Journey
 
 ```
-Describe Symptoms (Text / Voice)
+Describe Symptoms (Text / Voice in English/Indian Languages)
         ↓
 AI Symptom Analysis (Google Gemini)
         ↓
-Case-Study-Based Clinical Assessment
+Case-Study-Based Clinical Assessment (Text & Audio TTS Output)
         ↓
 Specialist Recommendation
         ↓
@@ -24,6 +24,8 @@ Appointment Booking
 AI Consultation Summary
         ↓
 Prescription Digitization & Storage
+        ↓
+Hospital/Doctor Portal (Doctors view patient's digitized history)
 ```
 
 > ⚠️ **Disclaimer:** The AI provides a *likely* clinical assessment based on predefined medical case studies. It is a decision-support tool, **not** a replacement for a qualified medical professional.

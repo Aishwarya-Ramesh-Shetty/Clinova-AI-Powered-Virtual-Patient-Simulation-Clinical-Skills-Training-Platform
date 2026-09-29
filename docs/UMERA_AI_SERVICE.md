@@ -110,6 +110,7 @@ class PatientInfo(BaseModel):
 
 class SymptomRequest(BaseModel):
     symptoms: str
+    language: str = 'en-US'
     patient_info: PatientInfo
 
 class SymptomDetail(BaseModel):
@@ -295,7 +296,7 @@ Output STRICT JSON matching this schema:
 Disclaimer: This is for educational/simulation purposes only, not real medical advice.
 """
 
-def build_symptom_prompt(symptoms: str, patient_info: dict, case_studies: list) -> str:
+def build_symptom_prompt(symptoms: str, patient_info: dict, case_studies: list, language: str) -> str:
     cases_text = "\n\n".join([str(c) for c in case_studies])
     return f"""
 Patient Info: Age {patient_info.get('age')}, Gender {patient_info.get('gender')}
@@ -305,6 +306,8 @@ Relevant Case Studies:
 {cases_text}
 
 Analyze the patient's symptoms based on the case studies and return the JSON.
+CRITICAL INSTRUCTION: Translate the 'assessment' and 'reasoning' fields to this language/locale code if it is not English: {language}.
+The 'recommended_specialist' field MUST remain in English and match the provided list exactly.
 """
 ```
 
@@ -370,7 +373,7 @@ router = APIRouter()
 async def analyze_symptoms(request: SymptomRequest):
     try:
         cases = get_relevant_case_studies(request.symptoms)
-        prompt = build_symptom_prompt(request.symptoms, request.patient_info.dict(), cases)
+        prompt = build_symptom_prompt(request.symptoms, request.patient_info.dict(), cases, request.language)
         
         response_data = await generate_json_response(prompt, SYMPTOM_ANALYSIS_SYSTEM_PROMPT)
         return SymptomResponse(**response_data)
