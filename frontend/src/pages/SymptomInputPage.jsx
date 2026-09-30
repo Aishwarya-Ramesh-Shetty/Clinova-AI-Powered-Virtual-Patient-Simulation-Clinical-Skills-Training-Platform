@@ -11,7 +11,7 @@ export default function SymptomInputPage() {
   const [lang, setLang] = useState('en-US');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { isListening, transcript, startListening, stopListening, resetTranscript, error } = useVoice();
+  const { isListening, transcript, startListening, stopListening, resetTranscript, error, isSupported } = useVoice();
 
   useEffect(() => {
     if (transcript) {
@@ -50,7 +50,9 @@ export default function SymptomInputPage() {
           </select>
           <button 
             onClick={isListening ? stopListening : () => startListening(lang)}
-            className={`flex items-center gap-2 px-4 py-2 rounded text-white ${isListening ? 'bg-red-500' : 'bg-teal-600'}`}
+            disabled={!isSupported}
+            title={!isSupported ? "Voice input is not supported in your browser" : "Start Voice Input"}
+            className={`flex items-center gap-2 px-4 py-2 rounded text-white ${!isSupported ? 'bg-gray-400 cursor-not-allowed' : isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-teal-600 hover:bg-teal-700'}`}
           >
             {isListening ? <><FaStop/> Stop</> : <><FaMicrophone/> Voice Input</>}
           </button>

@@ -4,6 +4,7 @@ import { searchDoctors } from '../services/api';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import Loader from '../components/common/Loader';
+import ImageWithFallback from '../components/common/ImageWithFallback';
 
 export default function DoctorDiscoveryPage() {
   const [searchParams] = useSearchParams();
@@ -39,16 +40,24 @@ export default function DoctorDiscoveryPage() {
         <h2 className="text-2xl font-bold mb-4">Nearby {specialty}s</h2>
         <div className="space-y-4">
           {doctors.map(doc => (
-            <div key={doc.id} className="bg-white p-4 rounded-lg shadow border flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-lg">{doc.name}</h3>
-                <p className="text-sm text-gray-600">{doc.clinicName}</p>
-                <p className="text-sm">Rating: {doc.rating} ⭐ | Exp: {doc.experience} yrs</p>
-                <p className="text-sm font-semibold text-teal-700">Fee: ₹{doc.consultationFee}</p>
+            <div key={doc.id} className="bg-white p-4 rounded-lg shadow border flex justify-between items-center gap-4">
+              <div className="flex gap-4 items-center">
+                <ImageWithFallback 
+                  src={doc.profileImageUrl} 
+                  alt={doc.name} 
+                  className="w-16 h-16 rounded-full object-cover border-2 border-teal-100 flex-shrink-0" 
+                  fallbackIconSize="1.5em"
+                />
+                <div>
+                  <h3 className="font-bold text-lg">{doc.name}</h3>
+                  <p className="text-sm text-gray-600">{doc.clinicName}</p>
+                  <p className="text-sm">Rating: {doc.rating} ⭐ | Exp: {doc.experience} yrs</p>
+                  <p className="text-sm font-semibold text-teal-700">Fee: ₹{doc.consultationFee}</p>
+                </div>
               </div>
               <button 
                 onClick={() => navigate(`/book/${doc.id}`)}
-                className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700"
+                className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 flex-shrink-0"
               >
                 Book
               </button>

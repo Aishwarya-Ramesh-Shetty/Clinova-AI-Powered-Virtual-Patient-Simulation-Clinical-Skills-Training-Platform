@@ -56,5 +56,7 @@ export const useVoice = () => {
 
   const resetTranscript = () => setTranscript('');
 
-  return { isListening, transcript, error, startListening, stopListening, resetTranscript };
+  const isSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  return { isListening, transcript, error, startListening, stopListening, resetTranscript, isSupported };
 };

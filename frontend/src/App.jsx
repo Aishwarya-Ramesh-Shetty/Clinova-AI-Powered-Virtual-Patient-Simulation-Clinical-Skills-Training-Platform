@@ -4,6 +4,7 @@ import Navbar from './components/common/Navbar'
 import Footer from './components/common/Footer'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import DoctorProtectedRoute from './components/common/DoctorProtectedRoute'
+import ErrorBoundary from './components/common/ErrorBoundary'
 
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -27,31 +28,33 @@ function App() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/doctor/login" element={<DoctorLoginPage />} />
-          
-          <Route element={<ProtectedRoute />}>
-            <Route path="/symptoms" element={<SymptomInputPage />} />
-            <Route path="/diagnosis" element={<DiagnosisResultPage />} />
-            <Route path="/doctors" element={<DoctorDiscoveryPage />} />
-            <Route path="/book/:doctorId" element={<AppointmentBookingPage />} />
-            <Route path="/appointments" element={<AppointmentsPage />} />
-            <Route path="/summary/:appointmentId" element={<ConsultationSummaryPage />} />
-            <Route path="/prescriptions/upload" element={<PrescriptionUploadPage />} />
-            <Route path="/prescriptions" element={<PrescriptionVaultPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Route>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/doctor/login" element={<DoctorLoginPage />} />
+            
+            <Route element={<ProtectedRoute />}>
+              <Route path="/symptoms" element={<SymptomInputPage />} />
+              <Route path="/diagnosis" element={<DiagnosisResultPage />} />
+              <Route path="/doctors" element={<DoctorDiscoveryPage />} />
+              <Route path="/book/:doctorId" element={<AppointmentBookingPage />} />
+              <Route path="/appointments" element={<AppointmentsPage />} />
+              <Route path="/summary/:appointmentId" element={<ConsultationSummaryPage />} />
+              <Route path="/prescriptions/upload" element={<PrescriptionUploadPage />} />
+              <Route path="/prescriptions" element={<PrescriptionVaultPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
 
-          <Route element={<DoctorProtectedRoute />}>
-            <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
-            <Route path="/doctor/patients/:patientId/history" element={<PatientHistoryPage />} />
-          </Route>
+            <Route element={<DoctorProtectedRoute />}>
+              <Route path="/doctor/dashboard" element={<DoctorDashboardPage />} />
+              <Route path="/doctor/patients/:patientId/history" element={<PatientHistoryPage />} />
+            </Route>
 
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
       <Footer />
       <Toaster position="top-right" />
