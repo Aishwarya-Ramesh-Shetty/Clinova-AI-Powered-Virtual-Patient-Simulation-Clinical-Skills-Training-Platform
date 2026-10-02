@@ -36,7 +36,7 @@ Hospital/Doctor Portal (Doctors view patient's digitized history)
 - **Voice & Multilingual Support:** Describe symptoms using Voice or Text in English, Hindi (hi-IN), or Kannada (kn-IN).
 - **AI Clinical Assessment:** Generates a likely clinical assessment with TTS (Read Aloud) audio output and inline summaries.
 - **Smart Routing:** Recommends specialists and helps discover nearby doctors using an interactive map.
-- **Consultation & Prescriptions:** Book appointments, generate AI summaries, and digitize prescriptions with OCR extraction shown inline.
+- **Consultation & Prescriptions:** Book appointments, generate AI summaries, and digitize prescriptions. The prescription image is sent directly to **Google Gemini Vision API** which reads and extracts text natively — no separate OCR engine required.
 - **Dual Portals:** Dedicated Patient and Doctor Portals with separate JWT-based authentication.
 - **Robust Navigation:** Comprehensive routing with smart Navbars, protected routes, and graceful 404 handling.
 
@@ -50,7 +50,7 @@ Hospital/Doctor Portal (Doctors view patient's digitized history)
 │    Frontend     │   Port 5173       │    Backend      │   Port 8000       │   AI Service    │
 │  React + Vite   │                   │  Node + Express │                   │ Python + FastAPI│
 │  Tailwind CSS   │                   │    MongoDB      │                   │  Gemini API     │
-│                 │                   │     JWT         │                   │  PaddleOCR      │
+│                 │                   │     JWT         │                   │                 │
 └─────────────────┘                   └─────────────────┘                   └─────────────────┘
      Port 5173                              Port 5000                           Port 8000
 ```
@@ -62,7 +62,7 @@ Hospital/Doctor Portal (Doctors view patient's digitized history)
 | Member      | Branch              | Module         | Key Tech                                     |
 |-------------|---------------------|----------------|----------------------------------------------|
 | Aishwarya   | `aishwarya/backend` | `backend/`     | Node.js, Express, MongoDB, Mongoose, JWT      |
-| Umera       | `umera/ai-service`  | `ai-service/`  | Python, FastAPI, Google Gemini API, PaddleOCR  |
+| Umera       | `umera/ai-service`  | `ai-service/`  | Python, FastAPI, Google Gemini API           |
 | Pranav      | `pranav/frontend`   | `frontend/`    | React, Vite, Tailwind, Leaflet, Web Speech API |
 
 ---
@@ -146,7 +146,7 @@ npm run dev
 | Backend      | Node.js, Express.js                      |
 | Database     | MongoDB + Mongoose                       |
 | AI / LLM     | Google Gemini API (gemini-2.0-flash)     |
-| OCR          | PaddleOCR                                |
+| OCR          | Gemini Vision API                        |
 | Voice Input  | Web Speech API (browser-native)          |
 | Maps         | Leaflet + OpenStreetMap                  |
 | Auth         | JWT (jsonwebtoken + bcryptjs)            |

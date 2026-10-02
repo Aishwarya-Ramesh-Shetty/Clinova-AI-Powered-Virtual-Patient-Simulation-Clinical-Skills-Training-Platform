@@ -694,7 +694,7 @@ Use **Postman** or **cURL**:
 
 - **CORS:** Ensure `origin` matches `FRONTEND_URL` in `.env`.
 - **Naming Conventions:** `snakeToCamel` is heavily utilized to convert AI snake_case to frontend-ready camelCase.
-- **Upload Names:** Frontend sends `prescription`, Multer intercepts `prescription`, then Axios forwards to AI as `file`.
+- **Upload Names:** Frontend sends `prescription`, Multer intercepts `prescription`, then backend receives the image file, forwards it to AI service's `/extract-prescription` endpoint, which uses **Gemini Vision API** directly (no PaddleOCR dependency — much simpler installation).
 - **Specialty Strings:** Must precisely match the canonical list in API docs.
 - **Envelope:** Every response uses the `sendResponse` wrapper, forcing `{success, data, message}`.
 - **`POST /api/symptoms/analyze`:** Must forward the `language` field from the request body to the AI service's `/analyze-symptoms` endpoint (the frontend sends it, AI service expects it).
