@@ -5,6 +5,7 @@ const path = require('path');
 const { sendResponse } = require('./utils/helpers');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
+const symptomRoutes = require('./routes/symptomRoutes');
 
 const app = express();
 
@@ -38,6 +39,9 @@ app.get('/api/health', (req, res) => {
 
 // Authentication Routes
 app.use('/api/auth', authRoutes);
+
+// Symptom Assessment Routes
+app.use('/api/symptoms', symptomRoutes);
 
 // Basic global error-handling middleware
 app.use(errorHandler);

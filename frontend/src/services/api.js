@@ -1,11 +1,11 @@
-import axios from 'axios';
-import { mockSymptomsResponse, mockDoctorsResponse, mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
+﻿import axios from 'axios';
+import { mockDoctorsResponse, mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
 
 // ─────────────────────────────────────────────────────────
 // Axios instance — baseURL from .env (VITE_API_URL)
 // ─────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
 // Attach JWT token to every request
@@ -33,7 +33,11 @@ export const register = (data) => api.post('/auth/register', data);
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');
 
-export const analyzeSymptoms = (data) => Promise.resolve(mockSymptomsResponse); // body: { symptoms: 'text' }
+export const analyzeSymptoms = (data) => api.post('/symptoms/sessions', data);
+export const createAssessmentSession = (data) => api.post('/symptoms/sessions', data);
+export const submitAssessmentAnswer = (sessionId, data) => api.post(`/symptoms/sessions/${sessionId}/answers`, data);
+export const prepareAssessmentSession = (sessionId) => api.post(`/symptoms/sessions/${sessionId}/prepare`);
+export const getAssessmentSession = (sessionId) => api.get(`/symptoms/sessions/${sessionId}`);
 
 export const searchDoctors = (params) => Promise.resolve(mockDoctorsResponse);
 export const getDoctorById = (id) => Promise.resolve({ data: { doctor: mockDoctorsResponse.data.doctors[0] } });
@@ -49,8 +53,7 @@ export const uploadPrescription = (formData) => Promise.resolve(mockPrescription
 export const getPrescriptions = () => Promise.resolve(mockPrescriptionsListResponse);
 export const getPrescriptionById = (id) => Promise.resolve({ success: true, data: { prescription: mockPrescriptionsListResponse.data.prescriptions[0] } });
 
-
-// Doctor portal auth � real API call
+// Doctor portal auth — real API call
 export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
 
 export default api;
