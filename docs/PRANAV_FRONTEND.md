@@ -1008,7 +1008,7 @@ export default function ConsultationSummaryPage() {
 ```
 
 ### `src/pages/PrescriptionUploadPage.jsx`
-Displays inline extraction results without redirecting.
+Displays inline extraction results without redirecting. The uploaded prescription image is sent to the AI service which uses Gemini Vision API to extract medicine details.
 ```jsx
 import { useState } from 'react';
 import { uploadPrescription } from '../services/api';

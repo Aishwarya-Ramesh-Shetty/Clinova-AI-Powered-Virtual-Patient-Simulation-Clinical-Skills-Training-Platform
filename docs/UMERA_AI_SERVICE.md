@@ -1,6 +1,6 @@
 # Umera's AI Service Implementation Guide
 
-This is the complete guide for building the AI SERVICE module (Python + FastAPI + Google Gemini API + PaddleOCR).
+This is the complete guide for building the AI SERVICE module (Python + FastAPI + Google Gemini API).
 Work ONLY in the `ai-service/` folder on branch `umera/ai-service`.
 
 ## 1. Getting Started
@@ -19,8 +19,6 @@ venv\Scripts\activate
 echo fastapi > requirements.txt
 echo uvicorn[standard] >> requirements.txt
 echo google-generativeai >> requirements.txt
-echo paddleocr >> requirements.txt
-echo paddlepaddle >> requirements.txt
 echo python-multipart >> requirements.txt
 echo python-dotenv >> requirements.txt
 echo pydantic >> requirements.txt
@@ -240,40 +238,12 @@ def get_relevant_case_studies(symptoms_text: str) -> list[dict]:
 
 ### `app/services/ocr_service.py`
 ```python
-import fitz  # PyMuPDF
-from paddleocr import PaddleOCR
-import tempfile
-import os
+# Prescription image bytes are passed directly to gemini-2.0-flash as a multipart input (image + prompt). No separate OCR step.
+from services.gemini_service import extract_prescription_with_gemini
 
-# Initialize PaddleOCR once at module level
-ocr = PaddleOCR(use_angle_cls=True, lang='en')
-
-async def extract_text_from_image(image_path: str) -> str:
-    result = ocr.ocr(image_path, cls=True)
-    if not result or not result[0]:
-        return ""
-    
-    text = ""
-    for line in result[0]:
-        text += line[1][0] + "\n"
-    return text
-
-async def extract_text_from_pdf(pdf_path: str) -> str:
-    doc = fitz.open(pdf_path)
-    full_text = ""
-    
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        pix = page.get_pixmap()
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_img:
-            pix.save(temp_img.name)
-            temp_img_path = temp_img.name
-            
-        page_text = await extract_text_from_image(temp_img_path)
-        full_text += page_text + "\n"
-        os.remove(temp_img_path)
-        
-    return full_text
+async def process_prescription_image(image_bytes: bytes) -> dict:
+    """Extract prescription data directly using Gemini Vision API."""
+    return await extract_prescription_with_gemini(image_bytes)
 ```
 
 ### `app/prompts/symptom_analysis.py`
@@ -512,7 +482,6 @@ Create `app/case_studies/cardiology.json`:
 - **File Upload Field:** Must be named `file` in the POST request to `/extract-prescription`.
 - **Environment Variables:** `GEMINI_API_KEY` goes in `.env` and is loaded via `dotenv`.
 - **Gemini Model:** Use `gemini-2.0-flash` for high speed.
-- **PaddleOCR:** Initialized once globally in `ocr_service.py` to prevent redundant memory allocation per request.
 - **Error Handling:** Try/except blocks return HTTP 500 errors to avoid silent crashes.
 
 ## 4. Testing Guide
