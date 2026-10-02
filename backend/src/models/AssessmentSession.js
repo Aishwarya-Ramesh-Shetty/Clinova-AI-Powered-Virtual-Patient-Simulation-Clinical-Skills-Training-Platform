@@ -31,6 +31,10 @@ const assessmentSessionSchema = new mongoose.Schema({
     type:    mongoose.Schema.Types.Mixed,
     default: null
   },
+  clinicalAssessment: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   status: {
     type:    String,
     enum:    ['intake', 'ready_for_assessment', 'assessing', 'completed', 'failed'],

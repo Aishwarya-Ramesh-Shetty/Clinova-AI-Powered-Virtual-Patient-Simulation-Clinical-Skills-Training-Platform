@@ -37,6 +37,7 @@ export const analyzeSymptoms = (data) => api.post('/symptoms/sessions', data);
 export const createAssessmentSession = (data) => api.post('/symptoms/sessions', data);
 export const submitAssessmentAnswer = (sessionId, data) => api.post(`/symptoms/sessions/${sessionId}/answers`, data);
 export const prepareAssessmentSession = (sessionId) => api.post(`/symptoms/sessions/${sessionId}/prepare`);
+export const assessSession = (sessionId) => api.post(`/symptoms/sessions/${sessionId}/assess`);
 export const getAssessmentSession = (sessionId) => api.get(`/symptoms/sessions/${sessionId}`);
 
 export const searchDoctors = (params) => Promise.resolve(mockDoctorsResponse);

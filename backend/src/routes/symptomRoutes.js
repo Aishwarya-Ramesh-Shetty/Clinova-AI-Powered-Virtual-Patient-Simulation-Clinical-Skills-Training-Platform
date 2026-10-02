@@ -4,7 +4,8 @@ const {
   createSession,
   submitAnswer,
   getSession,
-  prepareSession
+  prepareSession,
+  assessSession
 } = require('../controllers/symptomController');
 
 const router = express.Router();
@@ -14,5 +15,6 @@ router.post('/sessions',                      protect, createSession);
 router.post('/sessions/:sessionId/answers',   protect, submitAnswer);
 router.get( '/sessions/:sessionId',           protect, getSession);
 router.post('/sessions/:sessionId/prepare',   protect, prepareSession);
+router.post('/sessions/:sessionId/assess',    protect, assessSession);
 
 module.exports = router;

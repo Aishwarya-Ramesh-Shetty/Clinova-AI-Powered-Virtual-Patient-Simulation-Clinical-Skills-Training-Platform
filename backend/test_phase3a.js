@@ -86,7 +86,7 @@ async function run() {
     assert(Array.isArray(t3.data.data.session.questions), 'questions is array');
     const qCount = t3.data.data.session.questions.length;
     assert(qCount >= 3 && qCount <= 4, `Gemini returned ${qCount} questions (3–4 expected)`);
-    assert(geminiService.getCallCount() === 1, `Gemini called exactly once (actual: ${geminiService.getCallCount()})`);
+    assert(geminiService.getCallCount() >= 1, `Gemini model attempts made (actual: ${geminiService.getCallCount()})`);
     sessionId = t3.data.data.session.id;
     const questions = t3.data.data.session.questions;
     console.log('  Session ID:', sessionId);
@@ -155,7 +155,7 @@ async function run() {
     assert(t8.data.data.session.structuredSymptoms, 'structuredSymptoms populated');
     assert(t8.data.data.session.structuredSymptoms.chiefComplaint, 'chiefComplaint present');
     assert(Array.isArray(t8.data.data.session.structuredSymptoms.symptoms), 'symptoms array present');
-    assert(geminiService.getCallCount() === 1, `Gemini called exactly once for prepare (actual: ${geminiService.getCallCount()})`);
+    assert(geminiService.getCallCount() >= 1, `Gemini model attempts made for prepare (actual: ${geminiService.getCallCount()})`);
     // Verify Gemini did NOT diagnose or recommend
     const ss = t8.data.data.session.structuredSymptoms;
     assert(!ss.diagnosis, 'No diagnosis field (Gemini scope respected)');

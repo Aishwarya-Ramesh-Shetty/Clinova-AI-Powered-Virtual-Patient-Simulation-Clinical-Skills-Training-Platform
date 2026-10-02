@@ -1,11 +1,36 @@
 const mongoose = require('mongoose');
 const AssessmentSession = require('../models/AssessmentSession');
 const { generateFollowUpQuestions, structureAssessment } = require('../services/geminiService');
+const clinicalAssessmentService = require('../services/clinicalAssessmentService');
+const { evaluateClinicalSafety } = require('../services/clinicalSafetyService');
 const { sendResponse } = require('../utils/helpers');
 
 // ─── Helper: validate Mongoose ObjectId ──────────────────────────────────────
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
+}
+
+function calculatePatientAge(dateOfBirth) {
+  if (!dateOfBirth) return null;
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime()) || dob > new Date()) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
+function assessmentSessionPayload(session) {
+  return {
+    id: session._id,
+    status: session.status,
+    structuredSymptoms: session.structuredSymptoms,
+    clinicalAssessment: session.clinicalAssessment,
+    completedAt: session.completedAt
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -41,12 +66,12 @@ exports.createSession = async (req, res, next) => {
         language
       );
     } catch (geminiErr) {
-      // Mark session as failed and return a safe error — never expose key
+      // Mark session as failed and return a safe provider-independent error.
       session.status = 'failed';
       await session.save();
       return res.status(502).json({
         success: false, data: null,
-        message: `Could not generate intake questions: ${geminiErr.message}`
+        message: 'AI intake service is temporarily unavailable. Please try again.'
       });
     }
 
@@ -157,12 +182,98 @@ exports.getSession = async (req, res, next) => {
         status:             session.status,
         questions:          session.intakeQuestions,
         structuredSymptoms: session.structuredSymptoms,
+        clinicalAssessment: session.clinicalAssessment,
         createdAt:          session.createdAt,
         updatedAt:          session.updatedAt,
         completedAt:        session.completedAt
       }
     }, '');
 
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// POST /api/symptoms/sessions/:sessionId/assess
+// Run constrained Gemini assessment and deterministic safety checks
+// ════════════════════════════════════════════════════════════════════════════
+exports.assessSession = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!isValidObjectId(sessionId)) {
+      return res.status(400).json({ success: false, data: null, message: 'Invalid session ID.' });
+    }
+
+    const session = await AssessmentSession.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ success: false, data: null, message: 'Session not found.' });
+    }
+    if (String(session.patientId) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, data: null, message: 'Access denied to this session.' });
+    }
+    if (session.status === 'completed') {
+      return sendResponse(res, 200, { session: assessmentSessionPayload(session) }, 'Assessment already completed');
+    }
+    if (session.status === 'assessing') {
+      return res.status(409).json({ success: false, data: null, message: 'This session is already being assessed.' });
+    }
+    if (!session.structuredSymptoms || !session.completedAt || !['ready_for_assessment', 'failed'].includes(session.status)) {
+      return res.status(400).json({ success: false, data: null, message: 'Prepare the completed intake before running the clinical assessment.' });
+    }
+
+    const unanswered = session.intakeQuestions.filter((question) => !question.answer || !question.answer.trim());
+    if (unanswered.length > 0) {
+      return res.status(400).json({ success: false, data: null, message: 'All follow-up questions must be answered before assessment.' });
+    }
+
+    const age = calculatePatientAge(req.user.dateOfBirth);
+    session.status = 'assessing';
+    await session.save();
+
+    try {
+      const assessment = await clinicalAssessmentService.assessPatient({
+        initialSymptoms: session.initialSymptoms,
+        structuredSymptoms: session.structuredSymptoms,
+        intakeQuestions: session.intakeQuestions.map(({ questionId, question, answer }) => ({ questionId, question, answer })),
+        age,
+        gender: req.user.gender || null
+      });
+      const safety = evaluateClinicalSafety([
+        session.initialSymptoms,
+        ...session.intakeQuestions.map((question) => question.answer).filter(Boolean)
+      ]);
+
+      const finalAssessment = safety.override
+        ? {
+            ...assessment,
+            triage: {
+              level: 'emergency',
+              reason: 'An explicit high-risk symptom was reported. Immediate emergency professional evaluation is recommended.'
+            },
+            redFlags: [
+              ...assessment.redFlags.filter((redFlag) => !safety.flags.some((flag) => flag.flag === redFlag.flag)),
+              ...safety.flags
+            ]
+          }
+        : assessment;
+
+      session.clinicalAssessment = finalAssessment;
+      session.status = 'completed';
+      await session.save();
+
+      return sendResponse(res, 200, { session: assessmentSessionPayload(session) }, 'Clinical assessment completed');
+    } catch (assessmentError) {
+      session.status = 'failed';
+      await session.save();
+      return res.status(assessmentError.statusCode || 502).json({
+        success: false,
+        data: null,
+        message: assessmentError.message || 'The clinical assessment could not be completed.',
+        code: assessmentError.code || 'ASSESSMENT_FAILED'
+      });
+    }
   } catch (err) {
     next(err);
   }
@@ -224,7 +335,7 @@ exports.prepareSession = async (req, res, next) => {
       await session.save();
       return res.status(502).json({
         success: false, data: null,
-        message: `Could not structure assessment: ${geminiErr.message}`
+        message: 'AI intake service is temporarily unavailable. Please try again.'
       });
     }
 
