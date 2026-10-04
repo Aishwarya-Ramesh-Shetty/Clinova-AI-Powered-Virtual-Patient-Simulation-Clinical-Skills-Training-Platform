@@ -34,6 +34,36 @@ function assessmentSessionPayload(session) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// GET /api/symptoms/history
+// The authenticated patient's saved (completed) assessments, newest first.
+// Independent of appointments.
+// ════════════════════════════════════════════════════════════════════════════
+exports.getHistory = async (req, res, next) => {
+  try {
+    const sessions = await AssessmentSession.find({ patientId: req.user._id, status: 'completed' })
+      .sort({ completedAt: -1, createdAt: -1 })
+      .select('initialSymptoms clinicalAssessment createdAt completedAt')
+      .lean();
+
+    const history = sessions.map((s) => {
+      const a = s.clinicalAssessment || {};
+      return {
+        id: String(s._id),
+        assessedAt: s.completedAt || s.createdAt,
+        initialSymptoms: s.initialSymptoms,
+        possibleConditions: (Array.isArray(a.possibleConditions) ? a.possibleConditions : []).map((c) => c.name),
+        triage: a.triage || null,
+        recommendedSpecialist: a.recommendedSpecialist || null
+      };
+    });
+
+    return sendResponse(res, 200, { history }, 'Diagnosis history retrieved');
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════════════
 // POST /api/symptoms/sessions
 // Create a new assessment session and trigger Gemini Call #1
 // ════════════════════════════════════════════════════════════════════════════

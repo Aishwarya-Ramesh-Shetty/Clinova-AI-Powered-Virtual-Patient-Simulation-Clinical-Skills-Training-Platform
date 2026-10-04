@@ -13,6 +13,8 @@ import DiagnosisResultPage from './pages/DiagnosisResultPage'
 import DoctorDiscoveryPage from './pages/DoctorDiscoveryPage'
 import AppointmentBookingPage from './pages/AppointmentBookingPage'
 import AppointmentsPage from './pages/AppointmentsPage'
+import DiagnosisHistoryPage from './pages/DiagnosisHistoryPage'
+import DiagnosisDetailPage from './pages/DiagnosisDetailPage'
 import ConsultationSummaryPage from './pages/ConsultationSummaryPage'
 import PrescriptionUploadPage from './pages/PrescriptionUploadPage'
 import PrescriptionVaultPage from './pages/PrescriptionVaultPage'
@@ -39,6 +41,8 @@ function App() {
             <Route path="/doctors" element={<DoctorDiscoveryPage />} />
             <Route path="/book/:doctorId" element={<AppointmentBookingPage />} />
             <Route path="/appointments" element={<AppointmentsPage />} />
+            <Route path="/diagnosis-history" element={<DiagnosisHistoryPage />} />
+            <Route path="/diagnosis-history/:sessionId" element={<DiagnosisDetailPage />} />
             <Route path="/summary/:appointmentId" element={<ConsultationSummaryPage />} />
             <Route path="/prescriptions/upload" element={<PrescriptionUploadPage />} />
             <Route path="/prescriptions" element={<PrescriptionVaultPage />} />

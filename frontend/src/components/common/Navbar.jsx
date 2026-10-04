@@ -27,9 +27,11 @@ export default function Navbar() {
             </>
           ) : isAuthenticated ? (
             <>
+              <Link to="/" className="hover:text-teal-200">Home</Link>
               <Link to="/symptoms" className="hover:text-teal-200">Symptoms</Link>
-              <Link to="/appointments" className="hover:text-teal-200">My Appointments</Link>
-              <Link to="/prescriptions" className="hover:text-teal-200">Prescriptions</Link>
+              <Link to="/appointments" className="hover:text-teal-200">Appointments</Link>
+              <Link to="/diagnosis-history" className="hover:text-teal-200">Diagnosis History</Link>
+              <Link to="/prescriptions" className="hover:text-teal-200">Prescription Vault</Link>
               <Link to="/profile" className="font-semibold">Profile</Link>
               <button onClick={handleLogout} className="bg-teal-700 px-3 py-1 rounded hover:bg-teal-800">Logout</button>
             </>

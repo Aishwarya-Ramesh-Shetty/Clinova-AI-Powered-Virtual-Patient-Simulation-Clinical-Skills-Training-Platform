@@ -6,6 +6,11 @@ const { sendResponse } = require('./utils/helpers');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const symptomRoutes = require('./routes/symptomRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
+const placeRoutes = require('./routes/placeRoutes');
+const providerRoutes = require('./routes/providerRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const doctorAuthRoutes = require('./routes/doctorAuthRoutes');
 
 const app = express();
 
@@ -42,6 +47,21 @@ app.use('/api/auth', authRoutes);
 
 // Symptom Assessment Routes
 app.use('/api/symptoms', symptomRoutes);
+
+// Nearby doctor search and doctor details
+app.use('/api/doctors', doctorRoutes);
+
+// Real nearby places search
+app.use('/api/places', placeRoutes);
+
+// Groq-based provider search
+app.use('/api/providers', providerRoutes);
+
+// Patient appointments
+app.use('/api/appointments', appointmentRoutes);
+
+// Doctor portal (separate doctor JWT)
+app.use('/api/doctor-auth', doctorAuthRoutes);
 
 // Basic global error-handling middleware
 app.use(errorHandler);

@@ -5,12 +5,14 @@ const {
   submitAnswer,
   getSession,
   prepareSession,
-  assessSession
+  assessSession,
+  getHistory
 } = require('../controllers/symptomController');
 
 const router = express.Router();
 
 // All routes are protected — require valid JWT
+router.get( '/history',                       protect, getHistory);
 router.post('/sessions',                      protect, createSession);
 router.post('/sessions/:sessionId/answers',   protect, submitAnswer);
 router.get( '/sessions/:sessionId',           protect, getSession);

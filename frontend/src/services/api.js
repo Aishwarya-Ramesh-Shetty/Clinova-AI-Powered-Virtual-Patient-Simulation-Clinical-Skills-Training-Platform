@@ -1,5 +1,5 @@
-﻿import axios from 'axios';
-import { mockDoctorsResponse, mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
+import axios from 'axios';
+import { mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
 
 // ─────────────────────────────────────────────────────────
 // Axios instance — baseURL from .env (VITE_API_URL)
@@ -8,22 +8,33 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
-// Attach JWT token to every request
+// Attach the correct JWT: doctor token for /doctor-auth endpoints, patient token otherwise
+const isDoctorUrl = (url = '') => url.startsWith('/doctor-auth');
+const isLoginUrl = (url = '') => url.endsWith('/login') || url.endsWith('/register');
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('clinova_token');
+  const token = isDoctorUrl(config.url)
+    ? localStorage.getItem('clinova_doctor_token')
+    : localStorage.getItem('clinova_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// On 401 — clear token and redirect to login
+// On 401 (from a non-login request) — clear the relevant token and redirect to its login page
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('clinova_token');
-      window.location.href = '/login';
+    const url = error.config?.url || '';
+    if (error.response?.status === 401 && !isLoginUrl(url)) {
+      if (isDoctorUrl(url)) {
+        localStorage.removeItem('clinova_doctor_token');
+        window.location.href = '/doctor/login';
+      } else {
+        localStorage.removeItem('clinova_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error.response?.data || { message: 'Something went wrong' });
   }
@@ -39,13 +50,18 @@ export const submitAssessmentAnswer = (sessionId, data) => api.post(`/symptoms/s
 export const prepareAssessmentSession = (sessionId) => api.post(`/symptoms/sessions/${sessionId}/prepare`);
 export const assessSession = (sessionId) => api.post(`/symptoms/sessions/${sessionId}/assess`);
 export const getAssessmentSession = (sessionId) => api.get(`/symptoms/sessions/${sessionId}`);
+export const getDiagnosisHistory = () => api.get('/symptoms/history');
+export const getAppointmentSummary = (appointmentId) => api.get(`/appointments/${appointmentId}/summary`);
 
-export const searchDoctors = (params) => Promise.resolve(mockDoctorsResponse);
-export const getDoctorById = (id) => Promise.resolve({ data: { doctor: mockDoctorsResponse.data.doctors[0] } });
+export const searchDoctors = (params) => api.get('/doctors/search', { params });
+// Demo providers — always-visible local MongoDB records (no geolocation / no Groq)
+export const getDemoDoctors = () => api.get('/doctors/demo');
+export const getDoctorById = (id) => api.get(`/doctors/${id}`);
 
-export const bookAppointment = (data) => Promise.resolve({ data: { appointment: { status: 'booked' } } }); // body: { doctorId, date, timeSlot, notes }
-export const getAppointments = () => Promise.resolve(mockAppointmentsResponse);
-export const cancelAppointment = (id) => Promise.resolve({ data: {} });
+export const bookAppointment = (data) => api.post('/appointments', data); // body: { doctorId, date, timeSlot, notes }
+export const getAppointments = () => api.get('/appointments');
+export const getBookedSlots = (params) => api.get('/appointments/booked', { params });
+export const cancelAppointment = (id) => api.patch(`/appointments/${id}/cancel`);
 
 export const generateSummary = (data) => Promise.resolve(mockSummaryResponse);
 export const getSummary = (appointmentId) => Promise.resolve(mockSummaryResponse);
@@ -56,5 +72,7 @@ export const getPrescriptionById = (id) => Promise.resolve({ success: true, data
 
 // Doctor portal auth — real API call
 export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
+export const getDoctorAppointments = () => api.get('/doctor-auth/appointments');
+export const updateDoctorAppointmentStatus = (id, status) => api.patch(`/doctor-auth/appointments/${id}/status`, { status });
 
 export default api;

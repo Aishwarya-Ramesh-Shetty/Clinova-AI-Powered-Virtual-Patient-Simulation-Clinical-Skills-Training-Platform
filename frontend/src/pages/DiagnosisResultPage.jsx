@@ -24,6 +24,7 @@ export default function DiagnosisResultPage() {
 
   if (clinicalAssessment) {
     const conditions = Array.isArray(clinicalAssessment.possibleConditions) ? clinicalAssessment.possibleConditions : [];
+    const recommendedSpecialty = clinicalAssessment.recommendedSpecialist?.specialty?.trim() || '';
     const detectedRedFlags = Array.isArray(clinicalAssessment.redFlags)
       ? clinicalAssessment.redFlags.filter((redFlag) => redFlag.detected)
       : [];
@@ -78,6 +79,15 @@ export default function DiagnosisResultPage() {
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Recommended Specialist</h2>
             <p className="font-medium text-gray-900">{clinicalAssessment.recommendedSpecialist?.specialty}</p>
             <p className="text-gray-700 mt-1">{clinicalAssessment.recommendedSpecialist?.reason}</p>
+            {recommendedSpecialty && (
+              <button
+                type="button"
+                onClick={() => navigate(`/doctors?specialty=${encodeURIComponent(recommendedSpecialty)}${result.id ? `&sessionId=${encodeURIComponent(result.id)}` : ''}`)}
+                className="mt-3 bg-teal-600 text-white px-4 py-2 rounded font-semibold hover:bg-teal-700"
+              >
+                Find Nearby {recommendedSpecialty.endsWith('ologist') ? `${recommendedSpecialty}s` : `${recommendedSpecialty} providers`}
+              </button>
+            )}
           </section>
 
           {clinicalAssessment.followUpNeeded?.length > 0 && (
