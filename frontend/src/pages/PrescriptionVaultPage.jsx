@@ -19,8 +19,8 @@ export default function PrescriptionVaultPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {prescriptions.map(p => (
           <div key={p.id} className="bg-white p-4 rounded shadow border">
-            <h3 className="font-bold text-lg">{p.extractedData.doctorName || 'Unknown Doctor'}</h3>
-            <p className="text-sm text-gray-500">{new Date(p.uploadedAt).toLocaleDateString()}</p>
+            <h3 className="font-bold text-lg">{p.extractedData.doctor_name || 'Unknown Doctor'}</h3>
+            <p className="text-sm text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</p>
             <div className="mt-4">
               <h4 className="font-semibold text-sm mb-1">Medicines:</h4>
               <ul className="text-sm list-disc pl-4 space-y-1">

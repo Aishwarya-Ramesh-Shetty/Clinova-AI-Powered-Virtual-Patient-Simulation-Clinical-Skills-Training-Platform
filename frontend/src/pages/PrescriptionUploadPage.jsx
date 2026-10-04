@@ -23,7 +23,7 @@ export default function PrescriptionUploadPage() {
       toast.success('Uploaded successfully');
       setExtractedData(res.data.prescription.extractedData);
     } catch(err) {
-      toast.error('Upload failed');
+      toast.error(err?.message || 'Upload failed');
     } finally {
       setLoading(false);
     }
@@ -36,7 +36,7 @@ export default function PrescriptionUploadPage() {
         <form onSubmit={handleUpload}>
           <input 
             type="file" 
-            accept="image/*,application/pdf"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(e) => setFile(e.target.files[0])}
             className="w-full border p-2 mb-4"
           />
@@ -83,7 +83,7 @@ export default function PrescriptionUploadPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded border">
             <div>
               <p className="text-sm text-gray-500 font-semibold">Doctor Name</p>
-              <p className="text-gray-800 font-medium">{extractedData.doctorName || 'N/A'}</p>
+              <p className="text-gray-800 font-medium">{extractedData.doctor_name || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500 font-semibold">Date</p>

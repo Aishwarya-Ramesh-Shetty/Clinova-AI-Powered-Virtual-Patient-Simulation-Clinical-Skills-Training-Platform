@@ -11,6 +11,7 @@ const placeRoutes = require('./routes/placeRoutes');
 const providerRoutes = require('./routes/providerRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const doctorAuthRoutes = require('./routes/doctorAuthRoutes');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
 
 const app = express();
 
@@ -62,6 +63,9 @@ app.use('/api/appointments', appointmentRoutes);
 
 // Doctor portal (separate doctor JWT)
 app.use('/api/doctor-auth', doctorAuthRoutes);
+
+// Patient prescriptions (AI extraction via FastAPI service)
+app.use('/api/prescriptions', prescriptionRoutes);
 
 // Basic global error-handling middleware
 app.use(errorHandler);

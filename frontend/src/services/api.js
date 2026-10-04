@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { mockSummaryResponse, mockPrescriptionResponse, mockAppointmentsResponse, mockPrescriptionsListResponse } from '../utils/mockData';
+import { mockSummaryResponse, mockAppointmentsResponse } from '../utils/mockData';
 
 // ─────────────────────────────────────────────────────────
 // Axios instance — baseURL from .env (VITE_API_URL)
@@ -66,9 +66,11 @@ export const cancelAppointment = (id) => api.patch(`/appointments/${id}/cancel`)
 export const generateSummary = (data) => Promise.resolve(mockSummaryResponse);
 export const getSummary = (appointmentId) => Promise.resolve(mockSummaryResponse);
 
-export const uploadPrescription = (formData) => Promise.resolve(mockPrescriptionResponse); // formData must have key 'prescription'
-export const getPrescriptions = () => Promise.resolve(mockPrescriptionsListResponse);
-export const getPrescriptionById = (id) => Promise.resolve({ success: true, data: { prescription: mockPrescriptionsListResponse.data.prescriptions[0] } });
+// Prescriptions — real API. Never set Content-Type manually for these: axios
+// must generate the multipart boundary for the FormData upload itself.
+export const uploadPrescription = (formData) => api.post('/prescriptions', formData); // formData must have key 'prescription'
+export const getPrescriptions = () => api.get('/prescriptions');
+export const getPrescriptionById = (id) => api.get(`/prescriptions/${id}`);
 
 // Doctor portal auth — real API call
 export const doctorLoginApi = (data) => api.post('/doctor-auth/login', data);
