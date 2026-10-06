@@ -12,6 +12,8 @@ const providerRoutes = require('./routes/providerRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const doctorAuthRoutes = require('./routes/doctorAuthRoutes');
 const prescriptionRoutes = require('./routes/prescriptionRoutes');
+const summaryRoutes = require('./routes/summaryRoutes');
+const doctorPortalRoutes = require('./routes/doctorPortalRoutes');
 
 const app = express();
 
@@ -66,6 +68,12 @@ app.use('/api/doctor-auth', doctorAuthRoutes);
 
 // Patient prescriptions (AI extraction via FastAPI service)
 app.use('/api/prescriptions', prescriptionRoutes);
+
+// Consultation summaries (AI generation + DB storage)
+app.use('/api/summary', summaryRoutes);
+
+// Doctor portal — path the frontend expects (/api/doctor-portal/...)
+app.use('/api/doctor-portal', doctorPortalRoutes);
 
 // Basic global error-handling middleware
 app.use(errorHandler);

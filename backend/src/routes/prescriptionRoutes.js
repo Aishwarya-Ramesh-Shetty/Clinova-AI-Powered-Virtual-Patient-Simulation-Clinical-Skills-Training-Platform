@@ -9,11 +9,10 @@ const {
 
 const router = express.Router();
 
-// Upload + extract a prescription image (multipart/form-data, field name: `prescription`)
+// Both paths accepted — frontend calls /upload, field name: 'prescription'
 router.post('/', protect, uploadPrescriptionImage, createPrescription);
-// List the authenticated patient's prescriptions (newest first)
+router.post('/upload', protect, uploadPrescriptionImage, createPrescription);
 router.get('/', protect, getPrescriptions);
-// Single prescription — owner only (404 otherwise)
 router.get('/:id', protect, getPrescriptionById);
 
 module.exports = router;

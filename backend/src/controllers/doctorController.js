@@ -21,14 +21,26 @@ function normalizeSpecialty(value) {
 
 function mapSpecialtyForSearch(aiSpecialty) {
   const specialtyLower = String(aiSpecialty || '').trim().toLowerCase();
+
+  // Canonical AI specialist names -> seed DB specialty format
   const specialtyMap = {
-    'cardiology': 'Cardiology',
-    'dermatology': 'Dermatology',
-    'neurology': 'Neurology',
-    'orthopedics': 'Orthopedics',
+    'cardiologist': 'Cardiology',      'cardiology': 'Cardiology',
+    'dermatologist': 'Dermatology',    'dermatology': 'Dermatology',
+    'neurologist': 'Neurology',        'neurology': 'Neurology',
+    'orthopedic': 'Orthopedics',       'orthopedics': 'Orthopedics',
+    'orthopedist': 'Orthopedics',
     'ent': 'ENT',
-    'gynecology': 'Gynecology',
-    'pediatrics': 'Pediatrics',
+    'gynecologist': 'Gynecology',      'gynecology': 'Gynecology',
+    'pediatrician': 'Pediatrics',      'pediatrics': 'Pediatrics',
+    'general medicine': 'General Physician',
+    'general physician': 'General Physician',
+    'gastroenterologist': 'Gastroenterologist',
+    'pulmonologist': 'Pulmonologist',
+    'ophthalmologist': 'Ophthalmologist',
+    'urologist': 'Urologist',
+    'psychiatrist': 'Psychiatrist',
+    'dentist': 'Dentist',
+    'endocrinologist': 'Endocrinologist',
     'doctor': 'General Physician',
     'clinic': 'General Physician',
     'hospital': 'General Physician',
@@ -38,11 +50,14 @@ function mapSpecialtyForSearch(aiSpecialty) {
     return specialtyMap[specialtyLower];
   }
 
-  if (/cardologist/i.test(aiSpecialty)) return 'Cardiology';
-  if (/dermatolog/i.test(aiSpecialty)) return 'Dermatology';
-  if (/neurolog/i.test(aiSpecialty)) return 'Neurology';
+  // Regex fallbacks for common variations / typos
+  if (/cardiol/i.test(aiSpecialty)) return 'Cardiology';
+  if (/dermatol/i.test(aiSpecialty)) return 'Dermatology';
+  if (/neurol/i.test(aiSpecialty)) return 'Neurology';
   if (/orthoped/i.test(aiSpecialty)) return 'Orthopedics';
-  if (/general physician/i.test(aiSpecialty)) return 'General Physician';
+  if (/gynecol/i.test(aiSpecialty)) return 'Gynecology';
+  if (/pediatr/i.test(aiSpecialty)) return 'Pediatrics';
+  if (/general/i.test(aiSpecialty)) return 'General Physician';
 
   return String(aiSpecialty || '').trim();
 }

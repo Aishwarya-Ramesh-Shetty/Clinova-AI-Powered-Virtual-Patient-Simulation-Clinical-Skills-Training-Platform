@@ -1,6 +1,7 @@
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
 const {
+  analyzeSymptoms,
   createSession,
   submitAnswer,
   getSession,
@@ -11,7 +12,12 @@ const {
 
 const router = express.Router();
 
-// All routes are protected — require valid JWT
+// All routes protected by patient JWT
+
+// One-shot analysis — what the frontend calls
+router.post('/analyze', protect, analyzeSymptoms);
+
+// Session-based assessment flow
 router.get( '/history',                       protect, getHistory);
 router.post('/sessions',                      protect, createSession);
 router.post('/sessions/:sessionId/answers',   protect, submitAnswer);

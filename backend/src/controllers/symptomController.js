@@ -1,9 +1,47 @@
 const mongoose = require('mongoose');
+const axios = require('axios');
 const AssessmentSession = require('../models/AssessmentSession');
 const { generateFollowUpQuestions, structureAssessment } = require('../services/geminiService');
 const clinicalAssessmentService = require('../services/clinicalAssessmentService');
 const { evaluateClinicalSafety } = require('../services/clinicalSafetyService');
-const { sendResponse } = require('../utils/helpers');
+const { sendResponse, snakeToCamel } = require('../utils/helpers');
+
+const aiServiceBase = () => {
+  const base = String(process.env.AI_SERVICE_URL || 'http://localhost:8000');
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+};
+
+// POST /api/symptoms/analyze — one-shot analysis the frontend calls directly
+exports.analyzeSymptoms = async (req, res, next) => {
+  try {
+    const { symptoms, language = 'en-US' } = req.body;
+    if (!symptoms || !String(symptoms).trim()) {
+      return res.status(400).json({ success: false, data: null, message: 'symptoms text is required.' });
+    }
+    const patientInfo = {
+      age: req.user.dateOfBirth
+        ? Math.floor((Date.now() - new Date(req.user.dateOfBirth)) / (365.25 * 24 * 3600 * 1000))
+        : null,
+      gender: req.user.gender || null,
+    };
+    let result;
+    try {
+      const aiRes = await axios.post(
+        `${aiServiceBase()}/analyze-symptoms`,
+        { symptoms: String(symptoms).trim(), language, patient_info: patientInfo },
+        { timeout: 30000 }
+      );
+      result = snakeToCamel(aiRes.data);
+    } catch (aiError) {
+      console.error('AI service error in /analyze:', aiError.message);
+      return res.status(502).json({ success: false, data: null, message: 'AI service is temporarily unavailable. Please try again.' });
+    }
+    return sendResponse(res, 200, result, 'Symptoms analyzed successfully');
+  } catch (err) {
+    return next(err);
+  }
+};
+
 
 // ─── Helper: validate Mongoose ObjectId ──────────────────────────────────────
 function isValidObjectId(id) {
